@@ -48,7 +48,7 @@ def main():
     parser.add_argument(
         "--prompt",
         type=str,
-        nargs="?",
+        nargs="+",
         default="a painting of a virus monster playing guitar",
         help="the prompt to render"
     )

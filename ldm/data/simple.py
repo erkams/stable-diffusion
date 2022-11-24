@@ -122,20 +122,26 @@ class FolderData(Dataset):
 
 # convert visual genome relationships to prompts (check repetitive relations)
 def rel2prompt(rels):
-  prompt = ''
+  prompt = []
   last = ''
   for rel in rels:
-    _rel = f"{rel['subject']['names'][0]} {rel['predicate']} {rel['object']['names'][0]}\n"
+    _rel = f"{rel['subject']['names'][0]} {rel['predicate']} {rel['object']['names'][0]},"
     if last == _rel:
       continue
     else:
-      prompt += _rel
+      prompt.append(_rel)
       last = _rel
-  return prompt
+  return ', '.join(prompt)
+
+def write_prompts_to_file(ds, filename='./prompts.txt'):
+    print('Writing training prompts to file')
+    with open(filename, 'w') as f:
+        for x in ds:
+            f.write(f"{x['text']}\n")
 
 def hf_dataset(
     name,
-    dir,
+    dir="relationships_v1.0.0",
     image_transforms=[],
     image_column="image",
     text_column="text",
@@ -146,6 +152,11 @@ def hf_dataset(
     """Make huggingface dataset with appropriate list of transforms applied
     """
     ds = load_dataset(name, dir, split=split)
+
+    # just to have a smaller dataset for overfitting
+    ds = ds.train_test_split(1)['test']
+    print(ds[0]['text'])
+    write_prompts_to_file(ds)
     ds = ds.add_column(name='text', column=[rel2prompt(x['relationships']) for x in ds])
     image_transforms = [instantiate_from_config(tt) for tt in image_transforms]
     image_transforms.extend([transforms.ToTensor(),
