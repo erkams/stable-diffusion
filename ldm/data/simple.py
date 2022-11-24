@@ -125,7 +125,7 @@ def rel2prompt(rels):
   prompt = []
   last = ''
   for rel in rels:
-    _rel = f"{rel['subject']['names'][0]} {rel['predicate']} {rel['object']['names'][0]},"
+    _rel = f"{rel['subject']['names'][0]} {rel['predicate']} {rel['object']['names'][0]}"
     if last == _rel:
       continue
     else:
