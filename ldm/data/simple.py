@@ -120,18 +120,25 @@ class FolderData(Dataset):
         im = im.convert("RGB")
         return self.tform(im)
 
+# convert visual genome relationships to prompts (check repetitive relations)
+def rel2prompt(rels):
+  for rel in rels:
+    prompt += f"{rel['subject']['names'][0]} {rel['predicate']} {rel['object']['names'][0]}\n"
+  return prompt
+
 def hf_dataset(
     name,
     image_transforms=[],
     image_column="image",
     text_column="text",
-    split='train',
+    split='train[:1%]',
     image_key='image',
     caption_key='txt',
     ):
     """Make huggingface dataset with appropriate list of transforms applied
     """
     ds = load_dataset(name, split=split)
+    ds.add_column(name='text', column=[rel2prompt(x['relationships']) for x in ds])
     image_transforms = [instantiate_from_config(tt) for tt in image_transforms]
     image_transforms.extend([transforms.ToTensor(),
                                 transforms.Lambda(lambda x: rearrange(x * 2. - 1., 'c h w -> h w c'))])
