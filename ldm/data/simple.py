@@ -122,12 +122,20 @@ class FolderData(Dataset):
 
 # convert visual genome relationships to prompts (check repetitive relations)
 def rel2prompt(rels):
+  prompt = ''
+  last = ''
   for rel in rels:
-    prompt += f"{rel['subject']['names'][0]} {rel['predicate']} {rel['object']['names'][0]}\n"
+    _rel = f"{rel['subject']['names'][0]} {rel['predicate']} {rel['object']['names'][0]}\n"
+    if last == _rel:
+      continue
+    else:
+      prompt += _rel
+      last = _rel
   return prompt
 
 def hf_dataset(
     name,
+    dir,
     image_transforms=[],
     image_column="image",
     text_column="text",
@@ -137,8 +145,8 @@ def hf_dataset(
     ):
     """Make huggingface dataset with appropriate list of transforms applied
     """
-    ds = load_dataset(name, split=split)
-    ds.add_column(name='text', column=[rel2prompt(x['relationships']) for x in ds])
+    ds = load_dataset(name, dir, split=split)
+    ds = ds.add_column(name='text', column=[rel2prompt(x['relationships']) for x in ds])
     image_transforms = [instantiate_from_config(tt) for tt in image_transforms]
     image_transforms.extend([transforms.ToTensor(),
                                 transforms.Lambda(lambda x: rearrange(x * 2. - 1., 'c h w -> h w c'))])
